@@ -1,5 +1,6 @@
 /**
 SteamID.eu plugin
+Sourcecode provided as part of the sourcemod licence
 Provided by an anonymous contributor and updated by Martin.
 My First plugin in a language i dont know, but it appears to work, Please be gentle	
 
