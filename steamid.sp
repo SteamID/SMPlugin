@@ -1,5 +1,5 @@
 /**
-SteamID.eu plugin
+steamid.uk plugin
 Sourcecode provided as part of the sourcemod licence
 Provided by an anonymous contributor and updated by Martin.
 My First plugin in a language i dont know, but it appears to work, Please be gentle	
@@ -10,21 +10,21 @@ My First plugin in a language i dont know, but it appears to work, Please be gen
 #include <sourcemod>
 #undef REQUIRE_EXTENSIONS
 #include <SteamWorks>
-#define VERSION "1.0.6" 
+#define VERSION "1.0.7" 
 
 public Plugin:myinfo = 
 {
   name = "SteamID",
-  author = "SteamID.eu",
-  description = "Gives players the ability to use the SteamID.eu API in game & auto kick bad users",
+  author = "steamid.uk",
+  description = "Gives players the ability to use the steamid.uk API in game & auto kick bad users",
   version = VERSION,
-  url = "https://steamid.eu"
+  url = "https://steamid.uk"
 };
 
 
 enum APIError: {
 	AE_Unknown = 0, 					// An unrecognized error.
-	AE_NotFound, 						// The profile isn't in the SteamID.eu database.
+	AE_NotFound, 						// The profile isn't in the steamid.uk database.
 	AE_TooLong, 						// The submitted Steam64ID is too long.
 	AE_BadKey, 							// The API key is not recognized.
 	AE_OverLimit, 						// The API key has reached its limit for this end point.
@@ -37,7 +37,7 @@ enum APIError: {
 enum PlayerState: {
 	PlayerState_None = 0, 				// The default state when a player connects.
 	PlayerState_Valid, 					// At least some valid information has been returned for this player.
-	PlayerState_NotFound 				// This player is not in the SteamID.eu database yet.
+	PlayerState_NotFound 				// This player is not in the steamid.uk database yet.
 }
 
 // An enum array "hack" is the best way to store all this data.
@@ -47,10 +47,10 @@ enum PlayerInfo {
 	PlayerInfo_VACBans, 				// Amount of VAC bans the player has.
 	PlayerInfo_GameBans, 				// Amount of game bans the player has.
 	PlayerInfo_PreviousNames, 			// Amount of previous names the player has had.
-	PlayerInfo_SteamIDRating, 			// The player's SteamID.eu rating.
+	PlayerInfo_SteamIDRating, 			// The player's steamid.uk rating.
 	PlayerInfo_PreviousFriends, 		// Amount of previous friends the player has had.
 	Float:PlayerInfo_GenerationTime, 	// Amount of time taken to complete the request.
-	bool:PlayerInfo_SIDAvailable, 		// If there is any SteamID.eu data available.
+	bool:PlayerInfo_SIDAvailable, 		// If there is any steamid.uk data available.
 	bool:PlayerInfo_TradeBan, 			// If the player is trade banned or not.
 	bool:PlayerInfo_SidBan, 			// If the player is SteamID Banned
 	bool:PlayerInfo_Steamrepbanned, 			// If the player is SteamID Banned
@@ -111,15 +111,18 @@ public void OnPluginStart()
 	//RegConsoleCmd("sm_manualget", sm_manualget);
 
 	// Create the API key convar and others.
-	g_cvAPIKey = CreateConVar("steamid_api_key", "SteamID Api Key Here", "The API key to access SteamID.eu", FCVAR_PROTECTED);
+	g_cvAPIKey = CreateConVar("steamid_api_key", "SteamID Api Key Here", "The API key to access steamid.uk", FCVAR_PROTECTED);
 	g_cvAPIKey.AddChangeHook(OnConVarChanged);
 	g_cvAPIKey.GetString(g_sAPIKey, sizeof(g_sAPIKey));
 	g_kick_trade_banned = CreateConVar("steamid_kick_tradebanned", "1", "Automatically kick trade banned players)");
-	g_kick_steamid_banned = CreateConVar("steamid_kick_steamidbanned", "1", "Automatically kick steamid.eu banned players)");
+	g_kick_steamid_banned = CreateConVar("steamid_kick_steamidbanned", "1", "Automatically kick steamid.uk banned players)");
 	g_kick_vac_banned = CreateConVar("steamid_kick_vacbanned", "1", "Automatically kick vac banned players)");
 	g_kick_community_banned = CreateConVar("steamid_kick_communitybanned", "1", "Automatically kick Community banned players)");
 	g_kick_game_banned = CreateConVar("steamid_kick_gamebanned", "1", "Automatically kick game banned players)");
-	g_kick_steamrep_banned = CreateConVar("steamid_kick_steamrepbanned", "1", "Automatically kick SteamRep banned players)");
+	g_kick_steamrep_banned = CreateConVar("steamid_kick_steamrepbanned", "0", "Automatically kick SteamRep banned players)");
+	//SteamRep lookups were broken recently in this plugin
+	//So I turned the cvar setting to 0 to turn off those lookups until it is fixed.
+	//This fix was done by someone who wanted to keep the plugin functional
 	
 	// Check if SteamWorks is loaded.
 	g_bSteamWorks = LibraryExists("SteamWorks");
@@ -135,15 +138,15 @@ public void OnPluginStart()
 
 
 		
-	PrintToServer("SteamID.eu API Plugin enabled");
-	PrintToChatAll("\x01 \x06SteamID.eu API Plugin %s Loaded",VERSION);
+	PrintToServer("steamid.uk API Plugin enabled");
+	PrintToChatAll("\x01 \x06steamid.uk API Plugin %s Loaded",VERSION);
 }
 
 public void OnPluginEnd()
 {
 	
-	PrintToServer("SteamID.eu API Plugin Unloaded");
-	PrintToChatAll("\x01 \x07SteamID.eu API Plugin Unloaded");
+	PrintToServer("steamid.uk API Plugin Unloaded");
+	PrintToChatAll("\x01 \x07steamid.uk API Plugin Unloaded");
 
 }
 
@@ -247,7 +250,7 @@ public Action SM_DisplayInfo(int client, int args)
 		}
 		case PlayerState_NotFound:
 		{
-			ReplyToCommand(client, "\x04 \x03[SteamID]\x01 \x01 %N is not in the SteamID.eu database yet.", iTarget);
+			ReplyToCommand(client, "\x04 \x03[SteamID]\x01 \x01 %N is not in the steamid.uk database yet.", iTarget);
 			return Plugin_Handled;
 		}
 	}
@@ -288,7 +291,7 @@ public int Callback_RequestCompleted(Handle request, bool failure, bool requests
 	
 	// Turn the retrieved response into KeyValues.
 	KeyValues hKeyValues = new KeyValues("steamidresults");
-	if (!hKeyValues.ImportFromString(sResponse, "SteamID.eu"))
+	if (!hKeyValues.ImportFromString(sResponse, "steamid.uk"))
 	{
 		LogError("Failed to import KeyValues from response.");
 		return;
@@ -369,7 +372,7 @@ public int Callback_RequestCompleted(Handle request, bool failure, bool requests
 
 			// Using the GetString on just the Steam64ID will clamp it to 2147483647 as it presumes it's an integer. (trim a link instead)
 			hKeyValues.GetString("steamidurl", sBuffer, sizeof(sBuffer), "N/A");
-			ReplaceString(sBuffer, sizeof(sBuffer), "https://steamid.eu/profile/", "");
+			ReplaceString(sBuffer, sizeof(sBuffer), "https://steamid.uk/profile/", "");
 			strcopy(g_iPlayerInfo[client][PlayerInfo_Steam64ID], 32, sBuffer);
 		}
 		else if (StrEqual(sBuffer, "profile_bans"))
@@ -385,38 +388,38 @@ public int Callback_RequestCompleted(Handle request, bool failure, bool requests
 			// Checks Ban Status AND if the convar is set
 			if(g_iPlayerInfo[client][PlayerInfo_TradeBan] == true && g_kick_trade_banned.BoolValue == true)
 			{
-			//PrintToChatAll("\x01 \x07SteamID.eu Should be kicked for being steamid banned");
-			KickClient(client, "You are showing as trade banned on Steamid.eu.");
+			//PrintToChatAll("\x01 \x07steamid.uk Should be kicked for being steamid banned");
+			KickClient(client, "You are showing as trade banned on steamid.uk.");
 			}
 		
 			if(g_iPlayerInfo[client][PlayerInfo_SidBan] == true && g_kick_steamid_banned.BoolValue == true)
 			{
-			//PrintToChatAll("\x01 \x07SteamID.eu Should be kicked");
-			KickClient(client, "You are showing as steamid banned on Steamid.eu.");
+			//PrintToChatAll("\x01 \x07steamid.uk Should be kicked");
+			KickClient(client, "You are showing as steamid banned on steamid.uk.");
 			}
 				
 			if(g_iPlayerInfo[client][PlayerInfo_VACBans] == 1 && g_kick_vac_banned.BoolValue == true)
 			{
-			//PrintToChatAll("\x01 \x07SteamID.eu Should be kicked Vac Banned");
-			KickClient(client, "You are showing as VAC banned on Steamid.eu.");
+			//PrintToChatAll("\x01 \x07steamid.uk Should be kicked Vac Banned");
+			KickClient(client, "You are showing as VAC banned on steamid.uk.");
 			}
 			
 			if(g_iPlayerInfo[client][PlayerInfo_CommunityBan] == true && g_kick_community_banned.BoolValue == true)
 			{
-			//PrintToChatAll("\x01 \x07SteamID.eu Should be kicked Community Ban");
-			KickClient(client, "You are showing as Community banned on Steamid.eu.");
+			//PrintToChatAll("\x01 \x07steamid.uk Should be kicked Community Ban");
+			KickClient(client, "You are showing as Community banned on steamid.uk.");
 			}
 						
 			if(g_iPlayerInfo[client][PlayerInfo_GameBans] == 1 && g_kick_game_banned.BoolValue == true)
 			{
-			//PrintToChatAll("\x01 \x07SteamID.eu Should be kicked Game Bans");
-			KickClient(client, "You are showing as having game bans on Steamid.eu.");
+			//PrintToChatAll("\x01 \x07steamid.uk Should be kicked Game Bans");
+			KickClient(client, "You are showing as having game bans on steamid.uk.");
 			}	
 			
 			if(g_iPlayerInfo[client][PlayerInfo_Steamrepbanned] == false && g_kick_steamrep_banned.BoolValue == true)
 			{
-			//PrintToChatAll("\x01 \x07SteamID.eu Should be kicked Game Bans");
-			KickClient(client, "You are showing as having a SteamRep ban on Steamid.eu.");
+			//PrintToChatAll("\x01 \x07steamid.uk Should be kicked Game Bans");
+			KickClient(client, "You are showing as having a SteamRep ban on steamid.uk.");
 			}
 		}
 		else if (StrEqual(sBuffer, "request_stats"))
@@ -436,7 +439,7 @@ public int Callback_RequestCompleted(Handle request, bool failure, bool requests
 			// Now we know more detailed data is available.
 			g_iPlayerInfo[client][PlayerInfo_SIDAvailable] = true;
 
-			// Gather other SteamID.eu data.
+			// Gather other steamid.uk data.
 			g_iPlayerInfo[client][PlayerInfo_Games] = hKeyValues.GetNum("game_count", -1);
 			g_iPlayerInfo[client][PlayerInfo_PreviousNames] = hKeyValues.GetNum("name_history_count", -1);
 			g_iPlayerInfo[client][PlayerInfo_SteamIDRating] = hKeyValues.GetNum("steamid_rating", -1);
@@ -554,7 +557,7 @@ public int MenuHandler_Links(Menu menu, MenuAction action, int param1, int param
 
 		// If the target is still connected re-open this menu.
 		if (GetEngineVersion() != Engine_CSGO)
-			ShowMOTDPanel(param1, "SteamID.eu Plugin", sInfo, MOTDPANEL_TYPE_URL);
+			ShowMOTDPanel(param1, "steamid.uk Plugin", sInfo, MOTDPANEL_TYPE_URL);
 		else
 			PrintURLToConsole(param1, sInfo);
 
@@ -608,7 +611,7 @@ void FetchSteamInfo(int client)
 		return;
 
 	// SteamWorks is only in the old syntax, eww.
-	Handle hRequest = SteamWorks_CreateHTTPRequest(k_EHTTPMethodGET, "https://api.steamid.eu/plugin.php");
+	Handle hRequest = SteamWorks_CreateHTTPRequest(k_EHTTPMethodGET, "https://api.steamid.uk/plugin.php");
 
 	
 	decl String:server_port[10];
@@ -637,13 +640,13 @@ void OpenMainMenu(int client, int target)
 	Menu hMenu = new Menu(MenuHandler_Main);
 	new String:nickname[36];
 	GetClientName(target,    nickname,    sizeof(nickname));
-	hMenu.SetTitle("%N | Powered by SteamID.eu ", target);
+	hMenu.SetTitle("%N | Powered by steamid.uk ", target);
 	hMenu.AddItem("0", "Steam Info");
 
 	if (g_iPlayerInfo[target][PlayerInfo_SIDAvailable])
-		hMenu.AddItem("1", "SteamID.eu Info");
+		hMenu.AddItem("1", "steamid.uk Info");
 	else
-		hMenu.AddItem("1", "SteamID.eu Info", ITEMDRAW_DISABLED);
+		hMenu.AddItem("1", "steamid.uk Info", ITEMDRAW_DISABLED);
 
 	// Menu's don't use VFormat... why!
 	char sBuffer[64];
@@ -664,7 +667,7 @@ void OpenSteamPanel(int client, int target)
 	new String:nickname[36];
 	GetClientName(target,    nickname,    sizeof(nickname));
 
-	FormatEx(sBuffer, sizeof(sBuffer), "%N | Powered by SteamID.eu\n ", target);
+	FormatEx(sBuffer, sizeof(sBuffer), "%N | Powered by steamid.uk\n ", target);
 	hPanel.SetTitle(sBuffer);
 	
 	FormatEx(sBuffer, sizeof(sBuffer), "Name: %s", nickname);
@@ -682,7 +685,7 @@ void OpenSteamPanel(int client, int target)
 	PrintToConsole(client, "SteamID: %s" , g_iPlayerInfo[target][PlayerInfo_SteamID]);
 	PrintToConsole(client, "Steam3ID: %s" , g_iPlayerInfo[target][PlayerInfo_Steam3ID]);
 	PrintToConsole(client, "Steam64ID: %s" , g_iPlayerInfo[target][PlayerInfo_Steam64ID]);
-	PrintToConsole(client, "URL: https://SteamID.eu/profile/%s" , g_iPlayerInfo[target][PlayerInfo_Steam64ID]);
+	PrintToConsole(client, "URL: https://steamid.uk/profile/%s" , g_iPlayerInfo[target][PlayerInfo_Steam64ID]);
 	PrintToConsole(client, "=====================================================");
 	
 	
@@ -694,7 +697,7 @@ void OpenSteamPanel(int client, int target)
 	hPanel.DrawText(sBuffer);
 	FormatEx(sBuffer, sizeof(sBuffer), "[%s] community status ", g_iPlayerInfo[target][PlayerInfo_CommunityBan] ? "Banned" : "Clean");
 	hPanel.DrawText(sBuffer);
-	FormatEx(sBuffer, sizeof(sBuffer), "[%s] SteamID.eu status ", g_iPlayerInfo[target][PlayerInfo_SidBan] ? "Banned" : "Clean");
+	FormatEx(sBuffer, sizeof(sBuffer), "[%s] steamid.uk status ", g_iPlayerInfo[target][PlayerInfo_SidBan] ? "Banned" : "Clean");
 	hPanel.DrawText(sBuffer);
 	FormatEx(sBuffer, sizeof(sBuffer), "[%s] SteamRep.com status\n ", g_iPlayerInfo[target][PlayerInfo_Steamrepbanned] ? "Banned" : "Clean");
 	hPanel.DrawText(sBuffer);
@@ -722,9 +725,9 @@ void OpenSIDPanel(int client, int target)
 	Panel hPanel = new Panel();
 	new String:nickname[36];
 	GetClientName(target,    nickname,    sizeof(nickname));
-	FormatEx(sBuffer, sizeof(sBuffer), "%N | Powered by SteamID.eu\n ", target);
+	FormatEx(sBuffer, sizeof(sBuffer), "%N | Powered by steamid.uk\n ", target);
 	hPanel.SetTitle(sBuffer);
-	FormatEx(sBuffer, sizeof(sBuffer), "SteamID.eu rating: %d", g_iPlayerInfo[target][PlayerInfo_SteamIDRating]);
+	FormatEx(sBuffer, sizeof(sBuffer), "steamid.uk rating: %d", g_iPlayerInfo[target][PlayerInfo_SteamIDRating]);
 	hPanel.DrawText(sBuffer);
 	FormatEx(sBuffer, sizeof(sBuffer), "Previous names: %d", g_iPlayerInfo[target][PlayerInfo_PreviousNames]);
 	hPanel.DrawText(sBuffer);
@@ -753,14 +756,14 @@ void OpenLinksMenu(int client, int target)
 
 	
 	Menu hMenu = new Menu(MenuHandler_Links);
-	hMenu.SetTitle("%N | Powered by SteamID.eu\n ", target);
+	hMenu.SetTitle("%N | Powered by steamid.uk\n ", target);
 
 	char sBuffer[64];
 
 	FormatEx(sBuffer, sizeof(sBuffer), "https://steamcommunity.com/profiles/%s", g_iPlayerInfo[target][PlayerInfo_Steam64ID]);
 	hMenu.AddItem(sBuffer, "Steam community profile\n ");
-	FormatEx(sBuffer, sizeof(sBuffer), "https://steamid.eu/profile/%s", g_iPlayerInfo[target][PlayerInfo_Steam64ID]);
-	hMenu.AddItem(sBuffer, "SteamID.eu profile");
+	FormatEx(sBuffer, sizeof(sBuffer), "https://steamid.uk/profile/%s", g_iPlayerInfo[target][PlayerInfo_Steam64ID]);
+	hMenu.AddItem(sBuffer, "steamid.uk profile");
 	FormatEx(sBuffer, sizeof(sBuffer), "https://steamfriends.us/friend/%s", g_iPlayerInfo[target][PlayerInfo_Steam64ID]);
 	hMenu.AddItem(sBuffer, "SteamFriends.us profile");
 	FormatEx(sBuffer, sizeof(sBuffer), "https://steamarchive.net/profiles/%s", g_iPlayerInfo[target][PlayerInfo_Steam64ID]);
