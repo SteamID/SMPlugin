@@ -5,6 +5,7 @@ Provided by an anonymous contributor and updated by Martin.
 My First plugin in a language i dont know, but it appears to work, Please be gentle	
 
 1.0.6 / 11/02/2018 - beta release
+1.07 / 09/03/2020 - change api.steamid.uk to steamidapi.uk
 **/	
 #pragma semicolon 1
 #include <sourcemod>
@@ -611,7 +612,7 @@ void FetchSteamInfo(int client)
 		return;
 
 	// SteamWorks is only in the old syntax, eww.
-	Handle hRequest = SteamWorks_CreateHTTPRequest(k_EHTTPMethodGET, "https://api.steamid.uk/plugin.php");
+	Handle hRequest = SteamWorks_CreateHTTPRequest(k_EHTTPMethodGET, "https://steamidapi.uk/plugin.php");
 
 	
 	decl String:server_port[10];
